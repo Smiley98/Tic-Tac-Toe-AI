@@ -47,7 +47,7 @@ void Game::doMoves()
         exit(0);
     }
 
-    else if (m_isPlayerTurn) {
+    if (m_isPlayerTurn) {
         printf("Player turn:\n");
         printf("Which row would you like to move to (1-3)?\n");
         int row;
@@ -159,16 +159,23 @@ int Game::minmax(int depth, bool isMax)
 
 void Game::aiMove()
 {
-    int bestVal = INT_MIN;
+    int bestVal;// = INT_MIN;
+    if (m_isPlayerFirst)
+        bestVal = INT_MAX;
+    else
+        bestVal = INT_MIN;
     int bestRow = 0;
     int bestCol = 0;
     for (int i = 0; i < ROWS; i++) {
         for (int j = 0; j < COLS; j++) {
             if (isEmpty(i, j)) {
+                int moveVal;
+                bool bestMove = false;
                 m_board[i][j] = m_aiSymbol;
-                int moveVal = minmax(0, false);
+                moveVal = minmax(0, false);
                 m_board[i][j] = 0;
-                if (moveVal > bestVal) {
+                bestMove = m_isPlayerFirst ? (moveVal > bestVal) : (moveVal < bestVal);
+                if (bestMove) {
                     bestRow = i;
                     bestCol = j;
                     bestVal = moveVal;
@@ -176,6 +183,7 @@ void Game::aiMove()
             }
         }
     }
+    //Do the move!
     m_board[bestRow][bestCol] = m_aiSymbol;
 }
 
