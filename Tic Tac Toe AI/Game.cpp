@@ -128,13 +128,15 @@ int Game::minmax(int depth, bool isMax)
     //Minimizer won.
     if (score == -10)
         return score;
+    if (isBoardFull())
+        return 0;
 
     if (isMax) {
         int best = INT_MIN;
         for (int i = 0; i < ROWS; i++) {
             for (int j = 0; j < COLS; j++) {
                 if (isEmpty(i, j)) {
-                        m_board[i][j] = m_aiSymbol;
+                    m_board[i][j] = m_aiSymbol;
                     best = std::max(best, minmax(depth + 1, !isMax));
                     m_board[i][j] = 0;
                 }
@@ -147,7 +149,7 @@ int Game::minmax(int depth, bool isMax)
         for (int i = 0; i < ROWS; i++) {
             for (int j = 0; j < COLS; j++) {
                 if (isEmpty(i, j)) {
-                        m_board[i][j] = m_playerSymbol;
+                    m_board[i][j] = m_playerSymbol;
                     best = std::min(best, minmax(depth + 1, !isMax));
                     m_board[i][j] = 0;
                 }
@@ -158,24 +160,22 @@ int Game::minmax(int depth, bool isMax)
 }
 
 void Game::aiMove()
-{
-    int bestVal;// = INT_MIN;
-    if (m_isPlayerFirst)
-        bestVal = INT_MAX;
-    else
-        bestVal = INT_MIN;
+{   //Only works when the player is O.
+    int bestVal = INT_MIN;
     int bestRow = 0;
     int bestCol = 0;
     for (int i = 0; i < ROWS; i++) {
         for (int j = 0; j < COLS; j++) {
             if (isEmpty(i, j)) {
-                int moveVal;
-                bool bestMove = false;
+                //int moveVal;
+                //bool bestMove = false;
                 m_board[i][j] = m_aiSymbol;
-                moveVal = minmax(0, false);
+                int moveVal = minmax(0, false);
                 m_board[i][j] = 0;
-                bestMove = m_isPlayerFirst ? (moveVal > bestVal) : (moveVal < bestVal);
-                if (bestMove) {
+                //bestMove = m_isPlayerFirst ? (moveVal < bestVal) : (moveVal > bestVal);
+                //bestMove = moveVal > bestVal;
+                if(moveVal > bestVal) {
+                //if (bestMove) {
                     bestRow = i;
                     bestCol = j;
                     bestVal = moveVal;
@@ -191,7 +191,7 @@ bool Game::isBoardFull()
 {
 	for (int i = 0; i < 3; i++) {
 		for (int j = 0; j < 3; j++) {
-			if (m_board[i][j] != m_playerSymbol || m_board[i][j] != m_aiSymbol)
+			if (m_board[i][j] != m_playerSymbol && m_board[i][j] != m_aiSymbol)
 				return false;
 		}
 	}
