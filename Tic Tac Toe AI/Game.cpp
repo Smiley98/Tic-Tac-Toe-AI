@@ -2,6 +2,7 @@
 #include <iostream>
 #include <limits>
 #include <algorithm>
+#include <thread>
 
 
 void Game::run()
@@ -33,12 +34,12 @@ void Game::doMoves()
         once = false;
         askSymbol();
     }
-    if (isBoardFull()) {
+    if (isBoardFull(m_board)) {
         printf("Tie!\n");
         system("pause");
         exit(0);
     }
-    else if (abs(evaluate()) != 0) {
+    else if (abs(evaluate(m_board)) != 0) {
         if (m_isPlayerTurn)
             printf("%c wins!\n", m_aiSymbol);
         else
@@ -57,7 +58,7 @@ void Game::doMoves()
         std::cin >> col;
         row -= 1;
         col -= 1;
-        if (isEmpty(row, col)) {
+        if (isEmpty(m_board, row, col)) {
             m_board[row][col] = m_playerSymbol;
         }
     }
@@ -77,41 +78,41 @@ void Game::render()
 
 //Checks for any potential victory.
 //This is only ever used for AI so make AI the positive thing.
-int Game::evaluate()
+int Game::evaluate(char board[3][3])
 {
     //Check row victory.
     for (int i = 0; i < ROWS; i++) {
-        if (m_board[i][0] == m_board[i][1] && m_board[i][1] == m_board[i][2]) {
-            if (m_board[i][0] == m_aiSymbol)
+        if (board[i][0] == board[i][1] && board[i][1] == board[i][2]) {
+            if (board[i][0] == m_aiSymbol)
                 return 10;
-            if (m_board[i][0] == m_playerSymbol)
+            if (board[i][0] == m_playerSymbol)
                 return -10;
         }
     }
 
     //Check column victory. 
     for (int i = 0; i < COLS; i++) {
-        if (m_board[0][i] == m_board[1][i] && m_board[1][i] == m_board[2][i]) {
-            if (m_board[0][i] == m_aiSymbol)
+        if (board[0][i] == board[1][i] && board[1][i] == board[2][i]) {
+            if (board[0][i] == m_aiSymbol)
                 return 10;
-            if (m_board[0][i] == m_playerSymbol)
+            if (board[0][i] == m_playerSymbol)
                 return -10;
         }
     }
 
     //Check diagonal victory. 
-    if (m_board[0][0] == m_board[1][1] && m_board[1][1] == m_board[2][2]) {
-        if (m_board[0][0] == m_aiSymbol)
+    if (board[0][0] == board[1][1] && board[1][1] == board[2][2]) {
+        if (board[0][0] == m_aiSymbol)
             return 10;
-        if (m_board[0][0] == m_playerSymbol)
+        if (board[0][0] == m_playerSymbol)
             return -10;
     }
 
     //Check other diagonal victory. 
-    if (m_board[0][2] == m_board[1][1] && m_board[1][1] == m_board[2][0]) {
-        if (m_board[0][2] == m_aiSymbol)
+    if (board[0][2] == board[1][1] && board[1][1] == board[2][0]) {
+        if (board[0][2] == m_aiSymbol)
             return 10;
-        if (m_board[0][2] == m_playerSymbol)
+        if (board[0][2] == m_playerSymbol)
             return -10;
     }
 
@@ -119,26 +120,26 @@ int Game::evaluate()
     return 0;
 }
 
-int Game::minmax(int depth, bool isMax)
+int Game::minmax(char board[3][3], int depth, bool isMax)
 {
-    int score = evaluate();
+    int score = evaluate(board);
     //Maximizer won.
     if (score == 10)
         return score;
     //Minimizer won.
     if (score == -10)
         return score;
-    if (isBoardFull())
+    if (isBoardFull(board))
         return 0;
 
     if (isMax) {
         int best = INT_MIN;
         for (int i = 0; i < ROWS; i++) {
             for (int j = 0; j < COLS; j++) {
-                if (isEmpty(i, j)) {
-                    m_board[i][j] = m_aiSymbol;
-                    best = std::max(best, minmax(depth + 1, !isMax));
-                    m_board[i][j] = 0;
+                if (isEmpty(board, i, j)) {
+                    board[i][j] = m_aiSymbol;
+                    best = std::max(best, minmax(board, depth + 1, !isMax));
+                    board[i][j] = 0;
                 }
             }
         }
@@ -148,10 +149,10 @@ int Game::minmax(int depth, bool isMax)
         int best = INT_MAX;
         for (int i = 0; i < ROWS; i++) {
             for (int j = 0; j < COLS; j++) {
-                if (isEmpty(i, j)) {
-                    m_board[i][j] = m_playerSymbol;
-                    best = std::min(best, minmax(depth + 1, !isMax));
-                    m_board[i][j] = 0;
+                if (isEmpty(board, i, j)) {
+                    board[i][j] = m_playerSymbol;
+                    best = std::min(best, minmax(board, depth + 1, !isMax));
+                    board[i][j] = 0;
                 }
             }
         }
@@ -164,18 +165,15 @@ void Game::aiMove()
     int bestVal = INT_MIN;
     int bestRow = 0;
     int bestCol = 0;
+    std::thread threadPool[9];
+
     for (int i = 0; i < ROWS; i++) {
         for (int j = 0; j < COLS; j++) {
-            if (isEmpty(i, j)) {
-                //int moveVal;
-                //bool bestMove = false;
+            if (isEmpty(m_board, i, j)) {
                 m_board[i][j] = m_aiSymbol;
-                int moveVal = minmax(0, false);
+                int moveVal = minmax(m_board, 0, false);
                 m_board[i][j] = 0;
-                //bestMove = m_isPlayerFirst ? (moveVal < bestVal) : (moveVal > bestVal);
-                //bestMove = moveVal > bestVal;
-                if(moveVal > bestVal) {
-                //if (bestMove) {
+                if (moveVal > bestVal) {
                     bestRow = i;
                     bestCol = j;
                     bestVal = moveVal;
@@ -187,18 +185,32 @@ void Game::aiMove()
     m_board[bestRow][bestCol] = m_aiSymbol;
 }
 
-bool Game::isBoardFull()
+void Game::aiMoveInternal(char board[3][3], int row, int col, std::atomic_int& bestRow, std::atomic_int& bestCol, std::atomic_int& bestVal)
+{
+    if (isEmpty(board, row, col)) {
+        m_board[row][col] = m_aiSymbol;
+        int moveVal = minmax(board, 0, false);
+        m_board[row][col] = 0;
+        if (moveVal > bestVal) {
+            bestRow = row;
+            bestCol = col;
+            bestVal = moveVal;
+        }
+    }
+}
+
+bool Game::isBoardFull(char board[3][3])
 {
 	for (int i = 0; i < 3; i++) {
 		for (int j = 0; j < 3; j++) {
-			if (m_board[i][j] != m_playerSymbol && m_board[i][j] != m_aiSymbol)
+			if (board[i][j] != m_playerSymbol && board[i][j] != m_aiSymbol)
 				return false;
 		}
 	}
 	return true;
 }
 
-bool Game::isEmpty(int row, int column)
+bool Game::isEmpty(char board[3][3], int row, int column)
 {
-    return m_board[row][column] != m_playerSymbol && m_board[row][column] != m_aiSymbol;
+    return board[row][column] != m_playerSymbol && board[row][column] != m_aiSymbol;
 }

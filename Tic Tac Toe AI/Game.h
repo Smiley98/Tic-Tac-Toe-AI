@@ -1,6 +1,7 @@
 #pragma once
 #define ROWS 3
 #define COLS 3
+#include <atomic>
 
 class Game
 {
@@ -20,12 +21,13 @@ private:
 	void render();
 
 	//AI functions.
-	int evaluate();
-	int minmax(int depth, bool isMax);
+	int evaluate(char board[3][3]);
+	int minmax(char board[3][3], int depth, bool isMax);
 	void aiMove();
+	void aiMoveInternal(char board[3][3], int row, int col, std::atomic_int& bestRow, std::atomic_int& bestCol, std::atomic_int& bestVal);
 
 	//Helper functions
-	bool isBoardFull();
-	bool isEmpty(int row, int column);
+	bool isBoardFull(char board[3][3]);
+	bool isEmpty(char board[3][3], int row, int column);
 };
 
