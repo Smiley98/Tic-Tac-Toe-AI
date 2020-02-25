@@ -163,44 +163,57 @@ int Game::minmax(/*char board[3][3]*/Board& board, int depth, bool isMax)
 }
 
 void Game::aiMove()
-{   //Only works when the player is O.
-    int bestVal = INT_MIN;
-    int bestRow = 0;
-    int bestCol = 0;
-    std::thread threadPool[9];
-    //std::vector<std
+{
+    std::atomic_int bestVal(INT_MIN);
+    std::atomic_int bestRow(0);
+    std::atomic_int bestCol(0);
+    std::thread threadPool[ROWS * COLS];
+    Board boards[ROWS * COLS];
+    for (int i = 0; i < ROWS * COLS; i++)
+        boards[i] = m_board;
 
     for (int i = 0; i < ROWS; i++) {
         for (int j = 0; j < COLS; j++) {
             if (isEmpty(m_board, i, j)) {
-                m_board.m_data[i][j] = m_aiSymbol;
-                int moveVal = minmax(m_board, 0, false);
-                m_board.m_data[i][j] = 0;
-                if (moveVal > bestVal) {
-                    bestRow = i;
-                    bestCol = j;
-                    bestVal = moveVal;
-                }
+                const int index = i * ROWS + j;
+                threadPool[index] = std::thread(&Game::aiMoveInternal, this, std::ref(boards[index]), i, j, std::ref(bestRow), std::ref(bestCol), std::ref(bestVal));
             }
         }
     }
+    for (int i = 0; i < ROWS * COLS; i++) {
+        if(threadPool[i].joinable())
+            threadPool[i].join();
+    }
     //Do the move!
-    m_board.m_data[bestRow][bestCol] = m_aiSymbol;
+    m_board.m_data[bestRow.load()][bestCol.load()] = m_aiSymbol;
 }
 
 void Game::aiMoveInternal(/*char board[3][3]*/Board& board, int row, int col, std::atomic_int& bestRow, std::atomic_int& bestCol, std::atomic_int& bestVal)
 {
-    if (isEmpty(board, row, col)) {
-        m_board.m_data[row][col] = m_aiSymbol;
-        int moveVal = minmax(board, 0, false);
-        m_board.m_data[row][col] = 0;
-        if (moveVal > bestVal) {
-            bestRow = row;
-            bestCol = col;
-            bestVal = moveVal;
-        }
+    board.m_data[row][col] = m_aiSymbol;
+    int moveVal = minmax(board, 0, false);
+    m_board.m_data[row][col] = 0;
+    if (moveVal > bestVal.load()) {
+        bestRow.store(row);
+        bestCol.store(col);
+        bestVal.store(moveVal);
     }
 }
+
+//int bestVal = INT_MIN;
+//int bestRow = 0;
+//int bestCol = 0;
+
+//  if (isEmpty(m_board, i, j)) {
+//      m_board.m_data[i][j] = m_aiSymbol;
+//      int moveVal = minmax(m_board, 0, false);
+//      m_board.m_data[i][j] = 0;
+//      if (moveVal > bestVal) {
+//          bestRow = i;
+//          bestCol = j;
+//          bestVal = moveVal;
+//      }
+//  }
 
 bool Game::isBoardFull(/*char board[3][3]*/const Board& board)
 {
