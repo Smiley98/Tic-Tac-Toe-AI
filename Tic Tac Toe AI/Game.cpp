@@ -5,7 +5,7 @@
 #include <thread>
 
 void Game::run()
-{
+{   //Zero-initialize for safety.
     std::fill(m_board.m_data[0].begin(), m_board.m_data[0].end(), 0);
     std::fill(m_board.m_data[1].begin(), m_board.m_data[1].end(), 0);
     std::fill(m_board.m_data[2].begin(), m_board.m_data[2].end(), 0);
@@ -22,7 +22,6 @@ void Game::askSymbol()
     char input;
     std::cin >> input;
     if (input == 'x' || input == 'X') {
-        m_isPlayerFirst = true;
         m_isPlayerTurn = true;
         m_playerSymbol = 'X';
         m_aiSymbol = 'O';
@@ -30,7 +29,7 @@ void Game::askSymbol()
 }
 
 void Game::doMoves()
-{
+{   //Solid first-year level code for the game logic.
     static bool once = true;
     if (once) {
         once = false;
@@ -71,16 +70,14 @@ void Game::doMoves()
 }
 
 void Game::render()
-{	//I can make this look pretty later.
+{	//Function over form xD
 	system("cls");
-	for (int i = 0; i < ROWS; i++) {
+	for (int i = 0; i < ROWS; i++)
 		printf("%c %c %c\n", m_board.m_data[i][0], m_board.m_data[i][1], m_board.m_data[i][2]);
-	}
 }
 
 //Checks for any potential victory.
-//This is only ever used for AI so make AI the positive thing.
-int Game::evaluate(/*char board[3][3]*/const Board& board)
+int Game::evaluate(const Board& board)
 {
     //Check row victory.
     for (int i = 0; i < ROWS; i++) {
@@ -122,7 +119,8 @@ int Game::evaluate(/*char board[3][3]*/const Board& board)
     return 0;
 }
 
-int Game::minmax(/*char board[3][3]*/Board& board, int depth, bool isMax)
+//Where the magic happens.
+int Game::minmax(Board& board, int depth, bool isMax)
 {
     int score = evaluate(board);
     //Maximizer won.
@@ -162,6 +160,7 @@ int Game::minmax(/*char board[3][3]*/Board& board, int depth, bool isMax)
     }
 }
 
+//Where the real magic happens.
 void Game::aiMove()
 {
     std::atomic_int bestVal(INT_MIN);
@@ -188,7 +187,8 @@ void Game::aiMove()
     m_board.m_data[bestRow.load()][bestCol.load()] = m_aiSymbol;
 }
 
-void Game::aiMoveInternal(/*char board[3][3]*/Board& board, int row, int col, std::atomic_int& bestRow, std::atomic_int& bestCol, std::atomic_int& bestVal)
+//Slightly magical as well ;)
+void Game::aiMoveInternal(Board& board, int row, int col, std::atomic_int& bestRow, std::atomic_int& bestCol, std::atomic_int& bestVal)
 {
     board.m_data[row][col] = m_aiSymbol;
     int moveVal = minmax(board, 0, false);
@@ -200,6 +200,7 @@ void Game::aiMoveInternal(/*char board[3][3]*/Board& board, int row, int col, st
     }
 }
 
+//Back in the single-threaded days...
 //int bestVal = INT_MIN;
 //int bestRow = 0;
 //int bestCol = 0;
@@ -215,18 +216,18 @@ void Game::aiMoveInternal(/*char board[3][3]*/Board& board, int row, int col, st
 //      }
 //  }
 
-bool Game::isBoardFull(/*char board[3][3]*/const Board& board)
+bool Game::isEmpty(const Board& board, int row, int column)
+{
+    return board.m_data[row][column] != m_playerSymbol && board.m_data[row][column] != m_aiSymbol;
+}
+
+bool Game::isBoardFull(const Board& board)
 {
 	for (int i = 0; i < 3; i++) {
 		for (int j = 0; j < 3; j++) {
-			if (board.m_data[i][j] != m_playerSymbol && board.m_data[i][j] != m_aiSymbol)
+			if (isEmpty(board, i, j))
 				return false;
 		}
 	}
 	return true;
-}
-
-bool Game::isEmpty(/*char board[3][3]*/const Board& board, int row, int column)
-{
-    return board.m_data[row][column] != m_playerSymbol && board.m_data[row][column] != m_aiSymbol;
 }
