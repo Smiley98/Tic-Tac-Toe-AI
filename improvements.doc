@@ -1,0 +1,7 @@
+1. I don’t copy the entire board state for each node in the recursion tree. Previous stacks act as an automatic undo history which allows me to write a value for a given board index to said board array, perform min-max, and restore the previous board state and return the trial outcome.
+
+2. Parallelism. Up to 9 empty board indices. Allows min-max to be performed in parallel per empty index. Best score and corresponding row and column are lock-guarded whereas the min-max algorithm (where the expensive calculations take place) is fully parallel thus my algorithm is nearly fully concurrent (best case n^2 speedup where n is the sidelength of the board provided all indices are empty, similar to alpha-beta pruning or similar paths pruning in the sense that as the board fills up optimizations fall off exponentially).
+
+In order for this to work, the pre-ai-move board must be copied 9 times (less optimal to calculate the amount of empty indices because that requires dynamic memory). This doesn’t discredit the reduced space optimization I made because the copy only happens 9 times per move rather than 9 times per min-max iteration so in the grand scheme the copying is insignificant (naive copying is O(n), mine is O(1)).
+
+(Please consider giving me creativity marks for my use of parallelism because I’m pretty sure I’m the only student to come up with a parallel min-max algorithm [the rest of my assignment is evidently anything but creative cause I hate when non-graphics assignments are graphics assignments]).
